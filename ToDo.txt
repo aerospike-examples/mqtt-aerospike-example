@@ -1,0 +1,9 @@
+To Do
+=====
+
+Convert sout calls to logger calls
+Allow multiple topics to be subscribed to
+Run average querys at the end
+
+Done
+====
