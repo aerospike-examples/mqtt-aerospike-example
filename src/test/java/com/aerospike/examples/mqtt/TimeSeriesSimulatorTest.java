@@ -1,5 +1,6 @@
 package com.aerospike.examples.mqtt;
 
+import io.github.aerospike_examples.timeseries.DataPoint;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,99 +35,278 @@ public class TimeSeriesSimulatorTest {
     }
 
     /**
-     * Check our simulator returns random values with the expected drift and variance, within a certain tolerance
+     * Check our simulator returns values with the expected drift
+     * and this is completely recoverable when there is no time series or timestamp variance
      */
     @Test
-    public void checkMeanAndVarianceObserved() {
-        int startingValue = 12;
-        //double dailyDriftPct = 10;
-        double dailyDriftPct = 1;
-        double dailyVariancePct = 1;
-        int iterationCount = 100;
-        int timeIncrementSeconds = 12 * 60 * 60;
-        int tolerancePct = 10;
+    public void checkMeanObservedNoVolatilityWithNoTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 1000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 0;
+        double dailyDriftPct = 10;
+        double dailyVariancePct = 0;
+
+        double tolerancePct = 0.01;
 
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
-        double initialValue = 12;
-        long observationIntervalMillSeconds = timeIncrementSeconds * (int)Constants.MILLISECONDS_IN_SECOND;
-        double observationIntervalVariabilityPct = 10;
-        double dailyDrift = 5;
-        double dailyVolatilityPct = 10;
 
         TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
-                observationIntervalVariabilityPct,dailyDrift,dailyVolatilityPct);
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
-        double[] values = new double[iterationCount + 1];
-        values[0] = initialValue;
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
         for (int i = 1; i <= iterationCount; i++) {
-            values[i] = timeSeriesSimulator.getNextDataPoint().getValue();
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
         }
-        System.out.println(calculateDailyVolatilityPct(values,timeIncrementSeconds));
-
-        checkDailyDriftPct(values, dailyDriftPct, timeIncrementSeconds, tolerancePct);
-        checkDailyVolatilityPct(values, dailyVariancePct, timeIncrementSeconds, tolerancePct);
+        Assert.assertTrue(Utilities.valueInTolerance(dailyDriftPct, calculateDailyDriftPct(dataPoints), tolerancePct));
     }
 
     /**
-     * Check daily volatility versus a set of values simulated using that daily volatility - is the computed daily
-     * volatility within tolerancePct of the expected daily volatility
-     *
-     * @param values               - sample values
-     * @param dailyVariancePct     - expected drift
-     * @param timeIncrementSeconds - average time between observations
-     * @param tolerancePct         - tolerance for deviation of found value from expected value
+     * Check our simulator returns values with the expected drift
+     * and this is completely recoverable when there is no time series variance, but there is timestamp variance
      */
-    static void checkDailyVolatilityPct(double[] values, double dailyVariancePct, int timeIncrementSeconds, int tolerancePct) {
-        double empiricalVariancePct = calculateDailyVolatilityPct(values, timeIncrementSeconds);
-        Assert.assertTrue(Utilities.valueInTolerance(dailyVariancePct, empiricalVariancePct, tolerancePct));
+    @Test
+    public void checkMeanObservedNoVolatilityWithTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 5;
+        double dailyDriftPct = 10;
+        double dailyVariancePct = 0;
+
+        double tolerancePct = 0.01;
+
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        Assert.assertTrue(Utilities.valueInTolerance(dailyDriftPct, calculateDailyDriftPct(dataPoints), tolerancePct));
     }
 
     /**
-     * Private method to calculate the daily volatility of a set of time series values observed every timeIncrementSeconds
-     *
-     * @param values               - sample values
-     * @param timeIncrementSeconds - average time between observations
-     * @return calculated daily volatility as a percentage
+     * Check our simulator returns values with the expected volatility
+     * when there is no time series or timestamp variance
      */
-    private static double calculateDailyVolatilityPct(double[] values, int timeIncrementSeconds) {
-        int iterationCount = values.length - 1;
-        double requiredMean = calculateDailyDriftPct(values, timeIncrementSeconds)
-                * timeIncrementSeconds / (100 * TimeSeriesSimulator.SECONDS_IN_A_DAY);
-        double sumDiffsSqd = 0;
-        for (int i = 1; i <= iterationCount; i++)
-            sumDiffsSqd += Math.pow((values[i] - values[i - 1]) / (values[i - 1]), 2);
-        return 100 * Math.sqrt(TimeSeriesSimulator.SECONDS_IN_A_DAY * (sumDiffsSqd - iterationCount * Math.pow(requiredMean, 2)) / (iterationCount * timeIncrementSeconds));
+    @Test
+    public void checkVolObservedNoDriftWithNoTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 0;
+        double dailyDriftPct = 0;
+        double dailyVariancePct = 10;
+
+        double tolerancePct = 0.1;
+
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        Assert.assertTrue(Utilities.valueInTolerance(dailyVariancePct, calculateDailyVolPct(dataPoints), tolerancePct));
     }
 
     /**
-     * Check mean drift versus a set of values simulated using that mean drift - is the computed drift within tolerancePct of the expected drift
-     * Package level visibility for
-     *
-     * @param values               - sample values
-     * @param dailyDriftPct        - expected drift
-     * @param timeIncrementSeconds - average time period between observations
-     * @param tolerancePct         - tolerance for deviation of found value from expected value
+     * Check our simulator returns values with the expected volatility
+     * when there is no time series but there is timestamp variance
      */
-    static void checkDailyDriftPct(double[] values, double dailyDriftPct, int timeIncrementSeconds, int tolerancePct) {
-        double empiricalMeanPct = calculateDailyDriftPct(values, timeIncrementSeconds);
-        Assert.assertTrue(Utilities.valueInTolerance(dailyDriftPct, empiricalMeanPct, tolerancePct));
+    @Test
+    public void checkVolObservedNoDriftWithTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 5;
+        double dailyDriftPct = 0;
+        double dailyVariancePct = 10;
+
+        double tolerancePct = 0.1;
+
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        Assert.assertTrue(Utilities.valueInTolerance(dailyVariancePct, calculateDailyVolPct(dataPoints), tolerancePct));
     }
 
     /**
-     * Private method to calculate the mean drift from a set of values
+     * Check our simulator returns values with the expected volatility
+     * when there is no time series but there is timestamp variance
      *
-     * @param values               series of values whose mean drift is being tested
-     * @param timeIncrementSeconds - average time period between observations
+     * Note that when the variance is higher than the drift we need a high number of iterations to obtain convergence
+     */
+    @Test
+    public void checkVolAndDriftObservedWithNoTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 0;
+        double dailyDriftPct = 2;
+        double dailyVariancePct = 7;
+
+        double tolerancePct = 10;
+
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        Assert.assertTrue(Utilities.valueInTolerance(dailyDriftPct, calculateDailyDriftPct(dataPoints), tolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(dailyVariancePct, calculateDailyVolPct(dataPoints), tolerancePct));
+    }
+
+    /**
+     * Check our simulator returns values with the expected volatility
+     * when there is no time series but there is timestamp variance
+     *
+     * Note that when the variance is higher than the drift we need a high number of iterations to obtain convergence
+     */
+    @Test
+    public void checkVolAndDriftObservedWithTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 5;
+        double dailyDriftPct = 2;
+        double dailyVariancePct = 7;
+
+        double tolerancePct = 10;
+
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        Assert.assertTrue(Utilities.valueInTolerance(dailyDriftPct, calculateDailyDriftPct(dataPoints), tolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(dailyVariancePct, calculateDailyVolPct(dataPoints), tolerancePct));
+    }
+
+    /**
+     * Check our simulator returns values with the expected timestamp variance
+     */
+    @Test
+    public void checkTimestampVariance() {
+        double initialValue = 12;
+
+        int iterationCount = 10000;
+        long timeIncrementSeconds = 60;
+        long observationIntervalMillSeconds = timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND;
+        double observationIntervalVariabilityPct = 10;
+        double dailyDriftPct = 2;
+        double dailyVariancePct = 7;
+
+        double tolerancePct = 1;
+
+        double expectedSqrtVariancePct = observationIntervalVariabilityPct / Math.pow(3,0.5);
+        // Today's date, starting at midnight
+        Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
+
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+                observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
+
+        DataPoint[] dataPoints = new DataPoint[iterationCount +1];
+        dataPoints[0] = new DataPoint(startDateTime, initialValue);
+        for (int i = 1; i <= iterationCount; i++) {
+            dataPoints[i] = timeSeriesSimulator.getNextDataPoint();
+        }
+        double sumSqs = 0;
+        for(int i=1;i<iterationCount;i++) sumSqs+=
+                Math.pow(dataPoints[i].getTimestamp() - dataPoints[i-1].getTimestamp()
+                        - timeIncrementSeconds * Constants.MILLISECONDS_IN_SECOND,2);
+        double sqrtVariance = Math.sqrt(sumSqs/(iterationCount - 1));
+        double normalisedSqrtVarianceOfTimestampsPct = 100 * sqrtVariance / timeIncrementSeconds / Constants.MILLISECONDS_IN_SECOND;
+        Assert.assertTrue(Utilities.valueInTolerance(expectedSqrtVariancePct, normalisedSqrtVarianceOfTimestampsPct, tolerancePct));
+    }
+
+    /**
+     * Private method to calculate the mean drift from a set of data points
+     *
+     * @param dataPoints - data points
      * @return calculated mean daily drift as a percentage
      */
-    private static double calculateDailyDriftPct(double[] values, int timeIncrementSeconds) {
-        int iterationCount = values.length - 1;
-        // Calculate mean of differences
+    private static double calculateDailyDriftPct(DataPoint[] dataPoints) {
+        DataPoint[] dataPointDiffs = new DataPoint[dataPoints.length - 1];
+        for (int i = 0; i < dataPointDiffs.length; i++) {
+            double valueDiff = dataPoints[i+1].getValue() / dataPoints[i].getValue() - 1;
+            long timeDiff = dataPoints[i+1].getTimestamp() - dataPoints[i].getTimestamp();
+            dataPointDiffs[i] = new DataPoint(timeDiff,valueDiff);
+        }
         double sumDiffs = 0;
-        for (int i = 1; i <= iterationCount; i++) sumDiffs += (values[i] - values[i - 1]) / values[i - 1];
-        return 100 * sumDiffs * TimeSeriesSimulator.SECONDS_IN_A_DAY / (iterationCount * timeIncrementSeconds);
+        long sumTimes = 0;
+        for (int i = 0; i < dataPointDiffs.length; i++) {
+            sumDiffs += dataPointDiffs[i].getValue();
+            sumTimes += dataPointDiffs[i].getTimestamp();
+        }
+        return 100 * sumDiffs * TimeSeriesSimulator.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND / sumTimes;
     }
 
+    /**
+     * Private method to calculate the daily volatility from a set of data points
+     *
+     * @param dataPoints - data points
+     * @return calculated mean daily volatility as a percentage
+     */
+    private static double calculateDailyVolPct(DataPoint[] dataPoints) {
+        DataPoint[] dataPointDiffs = new DataPoint[dataPoints.length - 1];
+        for (int i = 0; i < dataPointDiffs.length; i++) {
+            double valueDiff = dataPoints[i+1].getValue() / dataPoints[i].getValue() - 1;
+            long timeDiff = dataPoints[i+1].getTimestamp() - dataPoints[i].getTimestamp();
+            dataPointDiffs[i] = new DataPoint(timeDiff,valueDiff);
+        }
 
+        double sumSqs = 0;
+        long sumTimes = 0;
+        double estimatedDailyDriftPct = calculateDailyDriftPct(dataPoints);
+        double perMilliSecondEstimatedDrift = estimatedDailyDriftPct / (100 * TimeSeriesSimulator.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND);
+        for (int i = 0; i < dataPointDiffs.length; i++) {
+            sumSqs += Math.pow(dataPointDiffs[i].getValue() - perMilliSecondEstimatedDrift * dataPointDiffs[i].getTimestamp(),2);
+            sumTimes += dataPointDiffs[i].getTimestamp();
+        }
+        return 100 * Math.sqrt(sumSqs * Constants.MILLISECONDS_IN_SECOND * TimeSeriesSimulator.SECONDS_IN_A_DAY/ sumTimes);
+    }
 }
