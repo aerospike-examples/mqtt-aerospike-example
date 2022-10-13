@@ -8,21 +8,16 @@ import org.eclipse.paho.client.mqttv3.*;
 
 import java.util.UUID;
 
-public class TimeSeriesPersister
-        /*implements IMqttActionListener*/{
+public class TimeSeriesPersister implements IMqttMessageListener{
     private final TimeSeriesClient timeSeriesClient;
-    private IMqttClient timeSeriesDataSubscriber;
 
-    public TimeSeriesPersister(AerospikeClient asClient, String asNamespace, String mqttBroker, String topic ) throws MqttException {
+    public TimeSeriesPersister(AerospikeClient asClient, String asNamespace, String mqttBroker) throws MqttException {
         timeSeriesClient = new TimeSeriesClient(asClient,asNamespace);
         String subscriberId = UUID.randomUUID().toString();
         System.out.printf("Subscribing to %s using subscriber id %s\n",mqttBroker,subscriberId);
-
-        timeSeriesDataSubscriber = new MqttClient(mqttBroker, subscriberId);
-
     }
 
-    void messageArrived(String topic, MqttMessage mqttMessage){
+    public void messageArrived(String topic, MqttMessage mqttMessage){
         String msg = new String(mqttMessage.getPayload(), Constants.DEFAULT_CHARSET);
         TimeSeriesDataPoint timeSeriesDataPoint = TimeSeriesDataPoint.decodeFromMQTT(msg);
         timeSeriesClient.put(timeSeriesDataPoint.getTimeSeriesName(),
