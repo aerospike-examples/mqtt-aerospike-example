@@ -14,8 +14,7 @@ import io.github.aerospike_examples.timeseries.DataPoint;
 @SuppressWarnings("WeakerAccess")
 public class TimeSeriesSimulator {
 
-    @SuppressWarnings("FieldCanBeLocal")
-    static final int SECONDS_IN_A_DAY = 24 * 60 * 60;
+    private final String simulatorName;
     private final double dailyDriftPct;
     private final double dailyVolatilityPct;
 
@@ -27,8 +26,7 @@ public class TimeSeriesSimulator {
     // uniformly across this range
     private final double observationIntervalVariabilityPct;
 
-    //
-    DataPoint currentDataPoint;
+    private DataPoint currentDataPoint;
 
     private final Random random;
 
@@ -49,31 +47,40 @@ public class TimeSeriesSimulator {
      * @param dailyVolatilityPct - daily volatility as a percentage
      */
     @SuppressWarnings("WeakerAccess")
-    public TimeSeriesSimulator(Date startTime, double initialValue, long observationIntervalMilliSeconds,
+    public TimeSeriesSimulator(String simulatorName, Date startTime, double initialValue, long observationIntervalMilliSeconds,
                                double observationIntervalVariabilityPct,
                                double dailyDriftPct, double dailyVolatilityPct) {
-        this(startTime,initialValue,observationIntervalMilliSeconds, observationIntervalVariabilityPct,
+        this(simulatorName,startTime,initialValue,observationIntervalMilliSeconds, observationIntervalVariabilityPct,
                 dailyDriftPct, dailyVolatilityPct, new Random().nextLong());
     }
 
     /**
      * Initialise the simulator - this means specifying the drift and volatility that is required
-     * This constructor allows the Random object to be initialised with a fixed seed so we always get the same output
+     * This constructor allows the Random object to be initialised with a fixed seed, so we always get the same output
      * useful for testing
      *
      * @param dailyDriftPct      daily drift as a percentage
      * @param dailyVolatilityPct - daily volatility as a percentage
      * @param randomSeed         - seed for randomness generator
      */
-    public TimeSeriesSimulator(Date startTime, double initialValue, long observationIntervalMilliSeconds,
+    public TimeSeriesSimulator(String simulatorName, Date startTime, double initialValue, long observationIntervalMilliSeconds,
                                double observationIntervalVariabilityPct,
                                double dailyDriftPct, double dailyVolatilityPct, long randomSeed) {
+        this.simulatorName = simulatorName;
         this.currentDataPoint = new DataPoint(startTime,initialValue);
         this.observationIntervalMilliSeconds = observationIntervalMilliSeconds;
         this.observationIntervalVariabilityPct = observationIntervalVariabilityPct;
         this.dailyDriftPct = dailyDriftPct;
         this.dailyVolatilityPct = dailyVolatilityPct;
         this.random = new Random(randomSeed);
+    }
+
+    public String getSimulatorName() {
+        return simulatorName;
+    }
+
+    public DataPoint getCurrentDataPoint() {
+        return currentDataPoint;
     }
 
     public DataPoint getNextDataPoint(){
@@ -92,7 +99,7 @@ public class TimeSeriesSimulator {
      * @return randomly generated next value for time series
      */
     public double getNextValue(double currentValue, double timeIncrementSeconds) {
-        double timeIncrementInDays = timeIncrementSeconds / SECONDS_IN_A_DAY;
+        double timeIncrementInDays = timeIncrementSeconds / Constants.SECONDS_IN_A_DAY;
         return currentValue * (
                 1 + (dailyDriftPct * timeIncrementInDays) / 100
                         + (dailyVolatilityPct * normallyDistributedSample() * Math.sqrt(timeIncrementInDays) / 100));

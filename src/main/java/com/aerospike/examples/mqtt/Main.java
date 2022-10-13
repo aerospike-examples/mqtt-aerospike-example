@@ -15,8 +15,10 @@ public class Main {
     public static final String MQTT_BROKER_URL = "tcp://test.mosquitto.org:1883";
     public static final String MQTT_TOPIC_NAME = String.format("/MQTT-Demo-Topic-%06d",new Random().nextInt(1000000));
     public static final String MQTT_SUBSCRIBER_ID = UUID.randomUUID().toString();
+    public static final String MQTT_PUBLISHER_ID = UUID.randomUUID().toString();
 
     // Simulation parameters
+    public static final String SENSOR_NAME = "Engine-001-RPM-Sensor";
     public static final long INTERVAL_BETWEEN_OBSERVATIONS_MS = 60 * 60 * Constants.MILLISECONDS_IN_SECOND;
     public static final int OBSERVATION_INTERVAL_VARIATION_PCT = 5;
     public static final int DAILY_DRIFT_PCT = 2;
@@ -24,46 +26,61 @@ public class Main {
     public static final int INITIAL_VALUE = 10000;
     public static final Date START_DATE_TIME = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
+    public static final int TIME_BETWEEN_SIMULATOR_UPDATES_MS = 100;
+    public static final int SIMULATOR_ITERATIONS = 10;
+
     // Aerospike parameters
     public static final String AEROSPIKE_SEED_HOST = "127.0.0.1";
     public static final int AEROSPIKE_SERVICE_PORT = 3000;
     public static final String AEROSPIKE_NAMESPACE = "test";
 
-
     public static void main(String[] args) throws MqttException, InterruptedException {
-        // Preparation
+        // Preparation - set up Aerospike client
         AerospikeClient asClient = new AerospikeClient(AEROSPIKE_SEED_HOST,AEROSPIKE_SERVICE_PORT);
-        TimeSeriesClient asTimeSeriesClient = new TimeSeriesClient(asClient,AEROSPIKE_NAMESPACE);
-        asClient.truncate(new InfoPolicy(),AEROSPIKE_NAMESPACE,asTimeSeriesClient.getTimeSeriesSet(),null);
+        // Clear down the time series space
+        asClient.truncate(new InfoPolicy(),AEROSPIKE_NAMESPACE,
+                io.github.aerospike_examples.timeseries.util.Constants.DEFAULT_TIME_SERIES_SET,null);
 
         // Set up an MQTT Subscriber connection
         IMqttClient mqttSubscriber = new MqttClient(MQTT_BROKER_URL, MQTT_SUBSCRIBER_ID);
         mqttSubscriber.connect(standardMqttConnectOptions());
 
-        // And subscribe to a topic on that connection
-        MQTTDataPersister mqttDataPersister = new MQTTDataPersister(asTimeSeriesClient);
-        mqttSubscriber.subscribe(MQTT_TOPIC_NAME, mqttDataPersister);
+        // Set up an Aerospike Time Series Client
+        TimeSeriesClient asTimeSeriesClient = new TimeSeriesClient(asClient,AEROSPIKE_NAMESPACE);
+        // Which an MQTT message listener can use to persist the MQTT data
+        IMqttMessageListener mqttDataListener = new MQTTDataPersister(asTimeSeriesClient);
+        // Subscribe the listener to the topic
+        mqttSubscriber.subscribe(MQTT_TOPIC_NAME, mqttDataListener);
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(START_DATE_TIME,INITIAL_VALUE,INTERVAL_BETWEEN_OBSERVATIONS_MS,
-                OBSERVATION_INTERVAL_VARIATION_PCT,DAILY_DRIFT_PCT,DAILY_VOLATILITY_PCT);
+        // Now set up a publisher
+        IMqttClient mqttPublisher = new MqttClient(MQTT_BROKER_URL, MQTT_PUBLISHER_ID);
+        mqttPublisher.connect(standardMqttConnectOptions());
 
-        String publisherId = UUID.randomUUID().toString();
+        // We will be publishing to a topic - get an object to represent that
+        MqttTopic mqttTopic = mqttPublisher.getTopic(MQTT_TOPIC_NAME);
 
-        IMqttClient publisher = new MqttClient(MQTT_BROKER_URL, publisherId);
+        // Set up a simulation object
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(SENSOR_NAME,START_DATE_TIME,INITIAL_VALUE,
+                INTERVAL_BETWEEN_OBSERVATIONS_MS, OBSERVATION_INTERVAL_VARIATION_PCT,DAILY_DRIFT_PCT,DAILY_VOLATILITY_PCT);
 
-        publisher.connect(standardMqttConnectOptions());
+        // Pass it to an object that can observe it, which is runnable
+        Runnable sensorObserver = new RunnableMQTTSensorObserver(timeSeriesSimulator, TIME_BETWEEN_SIMULATOR_UPDATES_MS,
+                SIMULATOR_ITERATIONS,mqttTopic);
 
-        MqttTopic mqttTopic = publisher.getTopic(MQTT_TOPIC_NAME);
+        // Set up a thread which runs the observer
+        Thread sensorObserverThread = new Thread(sensorObserver);
 
-        SensorReaderRunnable sensorReader = new SensorReaderRunnable("Sensor-001",timeSeriesSimulator,100,10,mqttTopic);
-        Thread t = new Thread(sensorReader);
-        t.start();
-        t.join();
-        System.out.println("Done waiting");
-        publisher.disconnect();
-        Thread.sleep(1000);
+        // Start it
+        sensorObserverThread.start();
+
+        // Wait for it to finish
+        sensorObserverThread.join();
+
+        // Tidy up
+        mqttPublisher.disconnect();
+        Thread.sleep(10 * TIME_BETWEEN_SIMULATOR_UPDATES_MS);
         mqttSubscriber.disconnect();
-        System.out.println(asTimeSeriesClient.getPoints("Sensor-001",START_DATE_TIME,new Date()).length);
+        System.out.println(asTimeSeriesClient.getPoints(SENSOR_NAME,START_DATE_TIME,new Date()).length);
     }
 
     private static MqttConnectOptions standardMqttConnectOptions(){

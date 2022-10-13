@@ -10,6 +10,7 @@ import io.github.aerospike_examples.timeseries.util.Utilities;
 
 
 public class TimeSeriesSimulatorTest {
+    private static final String DEFAULT_SENSOR_NAME = "Sensor001";
     @Test
     public void simulatorTest(){
         // Today's date, starting at midnight
@@ -20,16 +21,16 @@ public class TimeSeriesSimulatorTest {
         double dailyDrift = 0;
         double dailyVolatilityPct = 10;
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDrift,dailyVolatilityPct);
-        long noOfIterations = TimeSeriesSimulator.SECONDS_IN_A_DAY / (observationIntervalMillSeconds / Constants.MILLISECONDS_IN_SECOND);
+        long noOfIterations = Constants.SECONDS_IN_A_DAY / (observationIntervalMillSeconds / Constants.MILLISECONDS_IN_SECOND);
         for(int i=0;i<noOfIterations;i++ ){
             String timeSeriesDateFormat = "yyyy-MM-dd HH:mm:ss.SSS";
             SimpleDateFormat dateFormatter = new SimpleDateFormat(timeSeriesDateFormat);
 
             System.out.printf("%s : %.10f\n",dateFormatter.format(
-                    new Date(timeSeriesSimulator.currentDataPoint.getTimestamp())),
-                    timeSeriesSimulator.currentDataPoint.getValue());
+                    new Date(timeSeriesSimulator.getCurrentDataPoint().getTimestamp())),
+                    timeSeriesSimulator.getCurrentDataPoint().getValue());
             timeSeriesSimulator.getNextDataPoint();
         }
     }
@@ -54,7 +55,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -85,7 +86,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -116,7 +117,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -147,7 +148,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME,startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -180,7 +181,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -214,7 +215,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -246,7 +247,7 @@ public class TimeSeriesSimulatorTest {
         // Today's date, starting at midnight
         Date startDateTime = new Date(Utilities.getTruncatedTimestamp(System.currentTimeMillis()));
 
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(startDateTime,initialValue,observationIntervalMillSeconds,
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(DEFAULT_SENSOR_NAME, startDateTime,initialValue,observationIntervalMillSeconds,
                 observationIntervalVariabilityPct,dailyDriftPct,dailyVariancePct,TestConstants.RANDOM_SEED);
 
         DataPoint[] dataPoints = new DataPoint[iterationCount +1];
@@ -278,11 +279,11 @@ public class TimeSeriesSimulatorTest {
         }
         double sumDiffs = 0;
         long sumTimes = 0;
-        for (int i = 0; i < dataPointDiffs.length; i++) {
-            sumDiffs += dataPointDiffs[i].getValue();
-            sumTimes += dataPointDiffs[i].getTimestamp();
+        for (DataPoint dataPointDiff : dataPointDiffs) {
+            sumDiffs += dataPointDiff.getValue();
+            sumTimes += dataPointDiff.getTimestamp();
         }
-        return 100 * sumDiffs * TimeSeriesSimulator.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND / sumTimes;
+        return 100 * sumDiffs * Constants.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND / sumTimes;
     }
 
     /**
@@ -302,11 +303,11 @@ public class TimeSeriesSimulatorTest {
         double sumSqs = 0;
         long sumTimes = 0;
         double estimatedDailyDriftPct = calculateDailyDriftPct(dataPoints);
-        double perMilliSecondEstimatedDrift = estimatedDailyDriftPct / (100 * TimeSeriesSimulator.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND);
-        for (int i = 0; i < dataPointDiffs.length; i++) {
-            sumSqs += Math.pow(dataPointDiffs[i].getValue() - perMilliSecondEstimatedDrift * dataPointDiffs[i].getTimestamp(),2);
-            sumTimes += dataPointDiffs[i].getTimestamp();
+        double perMilliSecondEstimatedDrift = estimatedDailyDriftPct / (100 * Constants.SECONDS_IN_A_DAY * Constants.MILLISECONDS_IN_SECOND);
+        for (DataPoint dataPointDiff : dataPointDiffs) {
+            sumSqs += Math.pow(dataPointDiff.getValue() - perMilliSecondEstimatedDrift * dataPointDiff.getTimestamp(), 2);
+            sumTimes += dataPointDiff.getTimestamp();
         }
-        return 100 * Math.sqrt(sumSqs * Constants.MILLISECONDS_IN_SECOND * TimeSeriesSimulator.SECONDS_IN_A_DAY/ sumTimes);
+        return 100 * Math.sqrt(sumSqs * Constants.MILLISECONDS_IN_SECOND * Constants.SECONDS_IN_A_DAY/ sumTimes);
     }
 }
