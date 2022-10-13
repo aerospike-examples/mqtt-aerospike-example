@@ -26,13 +26,11 @@ public class SensorReaderRunnable implements Runnable{
     public void run(){
         for(int i=0;i<readingCount;i++){
             DataPoint dataPoint = timeSeriesSimulator.currentDataPoint;
-            System.out.println(dataPoint);
             byte[] payload = encodeForMQTT(dataPoint).getBytes();
             try {
                 MqttMessage msg = new MqttMessage(payload);
                 msg.setQos(0);
                 msg.setRetained(true);
-
                 publicationTopic.publish(msg);
             } catch (MqttException e) {
                 throw new RuntimeException(e);
@@ -40,8 +38,6 @@ public class SensorReaderRunnable implements Runnable{
             timedWait();
             timeSeriesSimulator.getNextDataPoint();
         }
-        System.out.println("Done running");
-
     }
 
     private void timedWait(){

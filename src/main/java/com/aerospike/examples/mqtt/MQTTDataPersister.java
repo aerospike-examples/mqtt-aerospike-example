@@ -6,15 +6,11 @@ import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 
 import org.eclipse.paho.client.mqttv3.*;
 
-import java.util.UUID;
-
-public class TimeSeriesPersister implements IMqttMessageListener{
+public class MQTTDataPersister implements IMqttMessageListener{
     private final TimeSeriesClient timeSeriesClient;
 
-    public TimeSeriesPersister(AerospikeClient asClient, String asNamespace, String mqttBroker) throws MqttException {
-        timeSeriesClient = new TimeSeriesClient(asClient,asNamespace);
-        String subscriberId = UUID.randomUUID().toString();
-        System.out.printf("Subscribing to %s using subscriber id %s\n",mqttBroker,subscriberId);
+    public MQTTDataPersister(TimeSeriesClient timeSeriesClient) throws MqttException {
+        this.timeSeriesClient = timeSeriesClient;
     }
 
     public void messageArrived(String topic, MqttMessage mqttMessage){
