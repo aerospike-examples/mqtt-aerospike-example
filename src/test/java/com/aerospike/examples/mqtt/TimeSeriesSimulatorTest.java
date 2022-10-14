@@ -8,9 +8,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import io.github.aerospike_examples.timeseries.util.Utilities;
 
-
+/**
+ * Class for testing the Time Series Simulator
+ */
 public class TimeSeriesSimulatorTest {
     private static final String DEFAULT_SENSOR_NAME = "Sensor001";
+
+    /**
+     * Check via console that the simulator emits the values expected
+     */
     @Test
     public void simulatorTest(){
         // Today's date, starting at midnight

@@ -12,14 +12,14 @@ import io.github.aerospike_examples.timeseries.DataPoint;
  * i.e. the fractional differences have a linear drift rate and a noise factor that correctly scales with time
  */
 @SuppressWarnings("WeakerAccess")
-public class TimeSeriesSimulator {
+public class TimeSeriesSimulator implements ITimeSeriesSimulator{
 
     private final String simulatorName;
     private final double dailyDriftPct;
     private final double dailyVolatilityPct;
 
     // Average time interval in seconds between successive each time series observation
-    final long observationIntervalMilliSeconds;
+    private final long observationIntervalMilliSeconds;
 
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals
@@ -31,22 +31,16 @@ public class TimeSeriesSimulator {
     private final Random random;
 
     /**
-     * Randomly sample from a normal distribution with mean zero and variance 1
-     * Used as the basis for generating noise in the simulation
-     *
-     * @return a double randomly sampled from an N(0,1) Gaussian
-     */
-    private double normallyDistributedSample() {
-        return inverseCumulativeNormalDistPoints[random.nextInt(inverseCumulativeNormalDistPoints.length)];
-    }
-
-    /**
      * Initialise the simulator - this means specifying the drift and volatility that is required
      *
-     * @param dailyDriftPct      daily drift as a percentage
-     * @param dailyVolatilityPct - daily volatility as a percentage
+     * @param simulatorName - name of the thing we are simulating
+     * @param startTime - start time of the simulation
+     * @param initialValue - initial value for the simulation
+     * @param observationIntervalMilliSeconds - average time between simulation samples provided by the simulation
+     * @param observationIntervalVariabilityPct - the variability of the time between simulation samples, as a percentage
+     * @param dailyDriftPct - the daily drift, in percentage terms, of the sample
+     * @param dailyVolatilityPct - the volatility, in percentage terms, of the sample
      */
-    @SuppressWarnings("WeakerAccess")
     public TimeSeriesSimulator(String simulatorName, Date startTime, double initialValue, long observationIntervalMilliSeconds,
                                double observationIntervalVariabilityPct,
                                double dailyDriftPct, double dailyVolatilityPct) {
@@ -56,13 +50,18 @@ public class TimeSeriesSimulator {
 
     /**
      * Initialise the simulator - this means specifying the drift and volatility that is required
-     * This constructor allows the Random object to be initialised with a fixed seed, so we always get the same output
-     * useful for testing
      *
-     * @param dailyDriftPct      daily drift as a percentage
-     * @param dailyVolatilityPct - daily volatility as a percentage
+     * @param simulatorName - name of the thing we are simulating
+     * @param startTime - start time of the simulation
+     * @param initialValue - initial value for the simulation
+     * @param observationIntervalMilliSeconds - average time between simulation samples provided by the simulation
+     * @param observationIntervalVariabilityPct - the variability of the time between simulation samples, as a percentage
+     * @param dailyDriftPct - the daily drift, in percentage terms, of the sample
+     * @param dailyVolatilityPct - the volatility, in percentage terms, of the sample
      * @param randomSeed         - seed for randomness generator
+     *
      */
+
     public TimeSeriesSimulator(String simulatorName, Date startTime, double initialValue, long observationIntervalMilliSeconds,
                                double observationIntervalVariabilityPct,
                                double dailyDriftPct, double dailyVolatilityPct, long randomSeed) {
@@ -75,14 +74,26 @@ public class TimeSeriesSimulator {
         this.random = new Random(randomSeed);
     }
 
+    /**
+     * Get simulator name
+     * @return simulator name
+     */
     public String getSimulatorName() {
         return simulatorName;
     }
 
+    /**
+     * Get current data point
+     * @return data point (timestamp,value)
+     */
     public DataPoint getCurrentDataPoint() {
         return currentDataPoint;
     }
 
+    /**
+     * Get next data point (timestamp,value)
+     * @return data point (timestamp, value)
+     */
     public DataPoint getNextDataPoint(){
         long nextTimestamp = nextObservationTime(currentDataPoint.getTimestamp());
         double nextValue = getNextValue(currentDataPoint.getValue(),
@@ -98,7 +109,7 @@ public class TimeSeriesSimulator {
      * @param timeIncrementSeconds - the time to allow before generating the next observation
      * @return randomly generated next value for time series
      */
-    public double getNextValue(double currentValue, double timeIncrementSeconds) {
+    private double getNextValue(double currentValue, double timeIncrementSeconds) {
         double timeIncrementInDays = timeIncrementSeconds / Constants.SECONDS_IN_A_DAY;
         return currentValue * (
                 1 + (dailyDriftPct * timeIncrementInDays) / 100
@@ -111,7 +122,7 @@ public class TimeSeriesSimulator {
      *
      * @return next observation time
      */
-    long nextObservationTime(long lastObservationTime) {
+    private long nextObservationTime(long lastObservationTime) {
         int intervalSamplingGranularity = 1000;
         // Randomly vary the observation interval by +/- observationIntervalVariabilityPct
         // First generate the variability
@@ -119,6 +130,16 @@ public class TimeSeriesSimulator {
                 + (2 * observationIntervalVariabilityPct * random.nextInt(intervalSamplingGranularity + 1) / intervalSamplingGranularity);
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
         return lastObservationTime + (long) (observationVariationPct * observationIntervalMilliSeconds / 100);
+    }
+
+    /**
+     * Randomly sample from a normal distribution with mean zero and variance 1
+     * Used as the basis for generating noise in the simulation
+     *
+     * @return a double randomly sampled from an N(0,1) Gaussian
+     */
+    private double normallyDistributedSample() {
+        return inverseCumulativeNormalDistPoints[random.nextInt(inverseCumulativeNormalDistPoints.length)];
     }
 
     /**

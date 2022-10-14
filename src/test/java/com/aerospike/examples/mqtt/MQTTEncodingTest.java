@@ -7,6 +7,9 @@ import static org.junit.Assert.assertEquals;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * Test the MQTTUtilities encode / decode methods
+ */
 public class MQTTEncodingTest {
     /**
      * Check that we get the original parameters back after encoding for MQTT and then decoding
