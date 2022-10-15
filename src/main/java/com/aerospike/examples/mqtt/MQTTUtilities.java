@@ -22,7 +22,7 @@ public class MQTTUtilities {
     /**
      * Encode the time series point into the correct format to post to the MQTT broker
      * @param timeSeriesName - time series name
-     * @param dataPoint - data point
+     * @param dataPoint - data point (timestamp,value)
      * @return message as string
      */
     public static String encodeForMQTT(String timeSeriesName, DataPoint dataPoint){
@@ -41,7 +41,7 @@ public class MQTTUtilities {
     /**
      * Extract the data point from the received MQTT message
      * @param mqttMessage  - mqtt message as string
-     * @return DataPoint
+     * @return DataPoint (timestamp,value)
      */
     public static DataPoint dataPointFromMQTTMessage(String mqttMessage){
         String[] mqttMessageParts = splitMQTTMessageIntoParts(mqttMessage);

@@ -273,7 +273,7 @@ public class TimeSeriesSimulatorTest {
     /**
      * Private method to calculate the mean drift from a set of data points
      *
-     * @param dataPoints - data points
+     * @param dataPoints - data points (timestamp,value)[]
      * @return calculated mean daily drift as a percentage
      */
     private static double calculateDailyDriftPct(DataPoint[] dataPoints) {
@@ -295,7 +295,7 @@ public class TimeSeriesSimulatorTest {
     /**
      * Private method to calculate the daily volatility from a set of data points
      *
-     * @param dataPoints - data points
+     * @param dataPoints - data points (timestamp,value)[]
      * @return calculated mean daily volatility as a percentage
      */
     private static double calculateDailyVolPct(DataPoint[] dataPoints) {

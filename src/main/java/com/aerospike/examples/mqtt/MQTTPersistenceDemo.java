@@ -3,7 +3,6 @@ package com.aerospike.examples.mqtt;
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
 import io.github.aerospike_examples.timeseries.TimeSeriesClient;
-import io.github.aerospike_examples.timeseries.TimeSeriesInfo;
 import io.github.aerospike_examples.timeseries.util.Utilities;
 import org.eclipse.paho.client.mqttv3.*;
 
@@ -151,7 +150,7 @@ public class MQTTPersistenceDemo {
         // Which an MQTT message listener can use to persist the MQTT data
         MQTTUtilities.outputMessageWithPara(
                 "Creating an MQTT Message Listener. This listener will write received data to Aerospike via the time series client");
-        IMqttMessageListener mqttDataListener = new MQTTDataPersister(asTimeSeriesClient);
+        IMqttMessageListener mqttDataListener = new MQTTAerospikeDataPersister(asTimeSeriesClient);
         // Subscribe the listener to the topic
         MQTTUtilities.outputMessage(String.format("Subscribe the listener to the MQTT topic %s",MQTT_TOPIC_NAME));
         MQTTUtilities.outputMessageWithPara("Note topic name contains a random integer to avoid demo concurrency issues ");

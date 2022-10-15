@@ -9,14 +9,14 @@ import org.eclipse.paho.client.mqttv3.*;
  * Implements the IMqttListener interface
  * When a message arrives, store it as a time series point
  */
-public class MQTTDataPersister implements IMqttMessageListener{
+public class MQTTAerospikeDataPersister implements IMqttMessageListener{
     private final TimeSeriesClient timeSeriesClient;
 
     /**
      * Constructor - takes a time series client
      * @param timeSeriesClient - time series client
      */
-    public MQTTDataPersister(TimeSeriesClient timeSeriesClient) {
+    public MQTTAerospikeDataPersister(TimeSeriesClient timeSeriesClient) {
         this.timeSeriesClient = timeSeriesClient;
     }
 
