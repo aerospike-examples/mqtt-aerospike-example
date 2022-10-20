@@ -146,7 +146,7 @@ Running the demonstration :
 java -jar target/aerospike-mqtt-example-1.0-SNAPSHOT-jar-with-dependencies.jar 
 ```
 
-Your output should be similar to [this sample output](https://github.com/aerospike-examples/mqtt-aerospike-example/resources/sample-output.txt)
+Your output should be similar to [this sample output](https://github.com/aerospike-examples/mqtt-aerospike-example/tree/resources/sample-output.txt)
 
 ## Reading the data from Aerospike using the Time Series API
 
