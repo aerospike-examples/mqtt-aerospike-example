@@ -1,0 +1,62 @@
+Creating a publisher connection to an MQTT broker at tcp://test.mosquitto.org:1883
+
+Creating a subscriber connection to an MQTT broker at tcp://test.mosquitto.org:1883
+
+Creating an Aerospike Time Series Client object
+
+Number of time series points in Aerospike for series Engine-001-RPM-Sensor is zero - any points later found will have been added via MQTT
+
+Creating an MQTT Message Listener. This listener will write received data to Aerospike via the time series client
+
+Subscribe the listener to the MQTT topic /MQTT-Demo-Topic-239834
+Note topic name contains a random integer to avoid demo concurrency issues 
+
+Create a time series simulator object
+
+Pass the simulator to an observer, which will periodically sample the simulator and then write observation messages to an MQTT broker
+The observer will sample the simulator 10 times before terminating
+
+Running the sensor observer
+
+Wait for the sensor observer to finish ...
+
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 01:00:00.000. Found value 10000.000000. Written to MQTT topic /MQTT-Demo-Topic-239834
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 01:00:00.000,10000.000000) to Aerospike for Engine-001-RPM-Sensor
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 01:59:21.120. Found value 9970.360010. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 03:00:11.880. Found value 10044.635879. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 04:02:37.320. Found value 9910.295571. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 05:00:10.080. Found value 9841.348538. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 06:02:23.280. Found value 10124.138301. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 07:01:54.120. Found value 10080.887230. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 08:02:20.400. Found value 10269.129275. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 09:04:24.240. Found value 10122.563812. Written to MQTT topic /MQTT-Demo-Topic-239834
+Sampling Engine-001-RPM-Sensor at time 2022-10-20 10:07:05.880. Found value 10144.621139. Written to MQTT topic /MQTT-Demo-Topic-239834
+
+Sensor observer finished
+
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 01:59:21.120,9970.360010) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 03:00:11.880,10044.635879) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 04:02:37.320,9910.295571) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 05:00:10.080,9841.348538) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 06:02:23.280,10124.138301) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 07:01:54.120,10080.887230) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 08:02:20.400,10269.129275) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 09:04:24.240,10122.563812) to Aerospike for Engine-001-RPM-Sensor
+Data point for Engine-001-RPM-Sensor received from /MQTT-Demo-Topic-239834. Wrote (2022-10-20 10:07:05.880,10144.621139) to Aerospike for Engine-001-RPM-Sensor
+
+Retrieving data for time series Engine-001-RPM-Sensor from Aerospike database
+Name : Engine-001-RPM-Sensor Start Date : 2022-10-20 01:00:00.000 End Date 2022-10-20 10:07:05.880 Data point count : 10
+
+Timestamp,Value
+2022-10-20 01:00:00.000,10000.000000
+2022-10-20 01:59:21.120,9970.360010
+2022-10-20 03:00:11.880,10044.635879
+2022-10-20 04:02:37.320,9910.295571
+2022-10-20 05:00:10.080,9841.348538
+2022-10-20 06:02:23.280,10124.138301
+2022-10-20 07:01:54.120,10080.887230
+2022-10-20 08:02:20.400,10269.129275
+2022-10-20 09:04:24.240,10122.563812
+2022-10-20 10:07:05.880,10144.621139
+
+Found 10 data points for time series Engine-001-RPM-Sensor in Aerospike database - count as expected
