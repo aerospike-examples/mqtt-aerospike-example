@@ -46,7 +46,7 @@ Sampling Engine-001-RPM-Sensor at time 2022-10-14 09:57:15.840. Found value 1043
 
 ## Sending the data to an MQTT Broker
 
-The MQTT paradigm assumes we have many disparate small devices. In order to collect information these devices will publish to a *topic* on a local MQTT Broker. You can think of a broker as a centralised depot for the receipt and collection of messages, which provides for scalability. *Topics* allow the messages to be separated into distinct collections. _Subscribers_ can independently subscribe to a topic and receive updates to the topic via a push notification.
+The MQTT paradigm assumes we have many disparate small devices. In order to collect information these devices will publish to a *topic* on an MQTT Broker. You can think of a broker as a centralised depot for the receipt and distribution of messages, which provides for scalability. *Topics* allow the messages to be separated into distinct collections. _Subscribers_ can independently subscribe to a topic and receive updates to the topic via push notification.
 
 The code below shows the signature of a _Sensor Observer_ object. We provide a simulator to watch, a topic to publish to, and integers governing the frequency and number of observations.
 
@@ -55,7 +55,7 @@ The code below shows the signature of a _Sensor Observer_ object. We provide a s
  long millisecondsBetweenObservations, long observationCount, MqttTopic publicationTopic)
 ```
 
-The MQTT topic is obtained by connecting to a networked resource, ```MQTT_BROKER_URL``` using a publisher id ```MQTT_PUBLISHER_ID```. In this example, we use a public MQTT server ```tcp://test.mosquitto.org:1883```.
+The MQTT publication topic is obtained by connecting to a networked resource, ```MQTT_BROKER_URL``` using a publisher id ```MQTT_PUBLISHER_ID```. In this example, we use the public MQTT server ```tcp://test.mosquitto.org:1883```.
 
 ```java
 IMqttClient mqttPublisher = new MqttClient(MQTT_BROKER_URL, MQTT_PUBLISHER_ID);
@@ -65,7 +65,7 @@ MqttTopic mqttTopic = mqttPublisher.getTopic(MQTT_TOPIC_NAME);
 
 Here we are using the [Eclipse Paho](https://www.eclipse.org/paho/) implementation of the MQTT API.
 
-When the observer is run the following code is executed ```observationCount``` times, each time resulting in the data point being sent to the publication topic
+When the observer is run the following code is executed ```observationCount``` times, each time resulting in the data point being sent to the publication topic.
 
 ```java
 DataPoint dataPoint = timeSeriesSimulator.getCurrentDataPoint();
@@ -107,7 +107,7 @@ This implements the ```IMqttMessageListener``` interface consisting of a single 
 public void messageArrived(String topic, MqttMessage mqttMessage)
 ```
 
-You can see that our implementation of ```IMqttMessageListener```,  ```MQTTAerospikeDataPersister``` requires an Aerospike Time Series Client when constructed.We subscribe to the topic using the listener object.
+You will see that our implementation of ```IMqttMessageListener```,  ```MQTTAerospikeDataPersister``` requires an Aerospike Time Series Client when constructed.We subscribe to the topic using the listener object.
 
 ```java
 mqttSubscriber.subscribe(MQTT_TOPIC_NAME, mqttDataListener);
@@ -198,6 +198,10 @@ Timestamp,Value
 
 If you scroll back to the beginning of the article, you will see this is exactly the data initally emitted by our mock sensor.
 
+## Conclusion
+
+This example shows how the [Aerospike](https://aerospike.com/) database can be easily and scalably used to store industrial time series data made available by the [MQTT](https://mqtt.org/) ecosystem. Aerospike plus its Community [Time Series Client](https://github.com/aerospike-community/aerospike-time-series-client) streamlines the storage and retrieval of the data, supporting the ability to both write and read millions of data points per second if required.
+
 ## Further Directions
 
-This demonstration could easily be scaled to show data being harvested from multiple sensors in parallel and saved to Aerospike.  It would also be very persuasive to replace the simulation with an actual device - something [Arduino based]((http://www.steves-internet-guide.com/using-arduino-pubsub-mqtt-client/)) for example.
+This demonstration could easily be scaled to show data being harvested from multiple sensors in parallel and saved to Aerospike.  It would also be interesting to replace the simulation with an actual device - something [Arduino based]((http://www.steves-internet-guide.com/using-arduino-pubsub-mqtt-client/)) for example.
